@@ -11,6 +11,7 @@ const User = require("../../models/User");
 
 // Load Input Validation
 const validateRegisterInput = require("../../validation/register");
+const validateLoginInput = require("../../validation/login");
 
 // @route   GET api/users/test
 // @desc    Tests profile route
@@ -30,7 +31,8 @@ router.post("/register", (req, res) => {
 
   User.findOne({ email: req.body.email }).then(user => {
     if (user) {
-      return res.status(400).json({ email: "Email already exist" });
+      errors.email = "Email already exist";
+      return res.status(400).json(errors);
     } else {
       const avatar = gravatar.url(req.body.email, {
         s: "200", //size
@@ -62,6 +64,13 @@ router.post("/register", (req, res) => {
 // @desc    Login users / Returning JWT Token
 // @access  Publc
 router.post("/login", (req, res) => {
+  const { errors, isValid } = validateLoginInput(req.body);
+
+  // Check Validation
+  if (!isValid) {
+    return res.status(400).json(errors);
+  }
+
   const email = req.body.email;
   const password = req.body.password;
 
@@ -69,7 +78,8 @@ router.post("/login", (req, res) => {
   User.findOne({ email }).then(user => {
     if (!user) {
       // user not exist
-      return res.status(404).json({ email: "Email not found" });
+      errors.email = "Email not found";
+      return res.status(404).json(errors);
     }
 
     bcrypt.compare(password, user.password).then(isMatch => {
@@ -86,7 +96,8 @@ router.post("/login", (req, res) => {
           }
         );
       } else {
-        return res.status(400).json({ password: "password not match" });
+        errors.password = "Password not match";
+        return res.status(400).json(errors);
       }
     });
   });
